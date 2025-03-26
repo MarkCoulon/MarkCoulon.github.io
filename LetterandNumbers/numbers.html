@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letters and Numbers - Numbers</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <header>
+        <h1>Play the Numbers Game!</h1>
+    </header>
+    <div class="container">
+        <div id="boxes">
+            <div class="box"></div>
+            <div class="box"></div>
+            <div class="box"></div>
+            <div class="box"></div>
+            <div class="box"></div>
+        </div>
+        <div class="buttons">
+            <button onclick="selectNumber('small')">Small</button>
+            <button onclick="selectNumber('big')">Big</button>
+        </div>
+        <p id="timer"></p>
+        <h2 id="target-number"></h2>
+        <h2 id="answerResult" class="Invisible"></h2>
+        <input type="text" id="solution-input" class="disabled" placeholder="Enter your calculation...">
+        <br>
+        <button class="submitButton" onclick="checkSolution()">Submit</button>
+    </div>
+    <div class="button-container bottomPage">
+        <button id="playAgainBtn" class="Invisible" onclick="location.reload();">Play again!</button>
+        <button onclick="window.location.href='index.html'">Back To Home Page</button>
+    </div>
+
+    <footer>
+        <p>Made by Your Mark Coulon</p>
+    </footer>
+
+    <script>
+        const smallNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        const bigNumbers = [25, 50, 75, 100];
+        let index = 0;
+        let timer;
+        let selectedNumbers = [];
+        let targetNumber = 0;
+
+        function selectNumber(type) {
+            if (index >= 5) return;
+            
+            let number = type === 'small' 
+                ? smallNumbers[Math.floor(Math.random() * smallNumbers.length)] 
+                : bigNumbers[Math.floor(Math.random() * bigNumbers.length)];
+            
+            document.getElementsByClassName('box')[index].textContent = number;
+            selectedNumbers.push(number);
+            index++;
+            
+            if (index === 5) {
+                generateTargetNumber();
+                startCountdown();
+            }
+        }
+        
+        function startCountdown() {
+            let timeLeft = 30;
+            document.getElementById('timer').textContent = `Time Left: ${timeLeft}`;
+            let inputField = document.getElementById('solution-input');
+            inputField.classList.remove('disabled');
+            inputField.classList.add('enabled');
+            
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = `Time Left: ${timeLeft}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    document.getElementById('timer').textContent = "Time's Up!"
+                    // alert('Time is up!');
+                }
+            }, 1000);
+        }
+
+        function generateTargetNumber() {
+            let tempNumbers = [...selectedNumbers];
+            let result = tempNumbers[Math.floor(Math.random() * tempNumbers.length)];
+            
+            for (let i = 0; i < 3; i++) { // Perform up to 3 operations
+                if (tempNumbers.length < 2) break;
+                
+                let num1Index = Math.floor(Math.random() * tempNumbers.length);
+                let num2Index;
+                do {
+                    num2Index = Math.floor(Math.random() * tempNumbers.length);
+                } while (num1Index === num2Index);
+                
+                let num1 = tempNumbers[num1Index];
+                let num2 = tempNumbers[num2Index];
+                let operations = [];
+                
+                if (num1 + num2 <= 999) operations.push('+');
+                if (num1 - num2 > 0) operations.push('-');
+                if (num1 * num2 <= 999) operations.push('*');
+                if (num1 % num2 === 0) operations.push('/');
+                
+                if (operations.length === 0) continue;
+                
+                let operation = operations[Math.floor(Math.random() * operations.length)];
+                switch (operation) {
+                    case '+': result = num1 + num2; break;
+                    case '-': result = num1 - num2; break;
+                    case '*': result = num1 * num2; break;
+                    case '/': result = num1 / num2; break;
+                }
+                
+                tempNumbers.splice(Math.max(num1Index, num2Index), 1);
+                tempNumbers.splice(Math.min(num1Index, num2Index), 1, result);
+            }
+            
+            targetNumber = Math.floor(result);
+            document.getElementById('target-number').textContent = `Target: ${targetNumber}`;
+        }
+        function checkSolution() {
+            clearInterval(timer);
+            const input = document.getElementById('solution-input').value;
+
+            // Get the numbers in the textboxes
+            const textboxes = Array.from(document.getElementsByClassName('box')).map(box => parseInt(box.textContent) || 0);
+            
+            // Count the occurrences of each number in the textboxes
+            let numberCounts = {};
+            textboxes.forEach(number => {
+                if (number > 0) {
+                    numberCounts[number] = (numberCounts[number] || 0) + 1;
+                }
+            });
+
+            // Extract numbers used in the input expression (ignoring operators)
+            const inputNumbers = input.match(/\d+/g) || [];
+            let inputCounts = {};
+
+            inputNumbers.forEach(number => {
+                number = parseInt(number);
+                inputCounts[number] = (inputCounts[number] || 0) + 1;
+            });
+
+            const resultElem = document.getElementById('answerResult') 
+            resultElem.classList.remove('Invisible');
+            resultElem.classList.add('Visible');
+
+            // Check if any number in the input is used more than its count in the textboxes
+            for (let number in inputCounts) {
+                if (inputCounts[number] > (numberCounts[number] || 0)) {
+                    resultElem.textContent = "The number " + number + " is used too many times in the solution!"
+                    //alert(`The number ${number} is used too many times in the solution.`);
+                    break; // Invalid solution
+                }
+            }
+
+            try {
+                const sanitizedInput = input.replace(/[^0-9+\-*/() ]/g, '');
+                const result = eval(sanitizedInput);
+               
+                if (result === targetNumber) {
+                    //alert('Correct!');
+                    resultElem.textContent = "Correct Calculation!"
+                } else {
+                    //alert('Incorrect. Try again!');
+                    resultElem.textContent = "Incorrect!"
+                }
+            } catch (error) {
+                //alert('Invalid expression. Please try again.');
+                resultElem.textContent = "Invalid expression!"
+            }
+            document.getElementById('playAgainBtn').classList.remove('Invisible');
+            document.getElementById('playAgainBtn').classList.add('Visible');
+        }
+    </script>
+    
+</body>
+</html>

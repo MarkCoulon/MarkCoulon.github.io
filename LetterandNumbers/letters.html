@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letters Game</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+
+<header>
+    <h1>Letters Game</h1>
+</header>
+
+<div class="container">
+    <div id="boxes">
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+    </div>
+    <div class="buttons">
+        <button onclick="addLetter('vowel')">Vowel</button>
+        <button onclick="addLetter('consonant')">Consonant</button>
+    </div>
+    <p id="timer"></p>
+    <h2 id="answerResult" class="Invisible"></h2>
+    <input type="text" id="solution-input" class="disabled" placeholder="Enter your word...">
+    <button class="submitButton" onclick="checkSolution()">Submit</button>
+    <h2 id="checkText" class="Invisible">Checking If Valid Word...</h2>
+</div>
+
+
+<div class="button-container bottomPage">
+    <button id="playAgainBtn" class="Invisible" onclick="location.reload();">Play again!</button>
+    <button onclick="window.location.href='index.html'">Back To Home Page</button>
+</div>
+<footer>
+    <p>Made by Mark Coulon</p>
+</footer>
+
+<script>
+    // Variables
+    const vowels = ['A', 'E', 'I', 'O', 'U'];
+    const consonants = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z'];
+    let letterBoxes = [];
+    let index = 0;
+    let timerInterval;
+    let timeLeft = 30;
+    let letterCounts = {}; // Dictionary to store letter counts
+
+
+    function getRandomLetter(array) {
+        return array[Math.floor(Math.random() * array.length)];
+    }
+
+
+    // Functions to add letters and manage the timer
+    function addLetter(type) {
+        if (letterBoxes.length >= 9) return; // Limit to 9 letters
+        const letter = type === 'vowel' ? getRandomLetter(vowels) : getRandomLetter(consonants);
+        // Add or update letter count in the dictionary
+        if (letterCounts[letter]) {
+            letterCounts[letter]++;
+        } else {
+            letterCounts[letter] = 1;
+        }
+
+        document.getElementsByClassName('box')[index].textContent = letter;
+        index++;
+        
+        if (index === 9) {
+            startCountdown();
+        }
+    }
+
+    function startCountdown() {
+        let timeLeft = 30;
+        document.getElementById('timer').textContent = `Time Left: ${timeLeft}`;
+        let inputField = document.getElementById('solution-input');
+        inputField.classList.remove('disabled');
+        inputField.classList.add('enabled');
+        
+        timer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').textContent = `Time Left: ${timeLeft}`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                document.getElementById('timer').textContent = "Time's Up!"
+                //alert('Time is up!');
+            }
+        }, 1000);
+    }
+
+    function getLetterCount(word) {
+        const count = {};
+        for (let letter of word) {
+            count[letter] = (count[letter] || 0) + 1;
+        }
+        return count;
+    }
+
+    // Function to query the dictionary API to check if the word is valid
+    async function checkValidWord(word) {
+        const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`;
+        try {
+            const response = await fetch(url);
+            if (response.ok) {
+                return true; // Word exists in the dictionary
+            } else {
+                return false; // Word doesn't exist in the dictionary
+            }
+        } catch (error) {
+            console.error('Error checking the dictionary API:', error);
+            return false;
+        }
+    }
+
+    function changeLoadingText() {
+        const checkText = document.getElementById('checkText');
+        if (checkText.classList.contains('Invisible')) {
+            checkText.classList.remove('Invisible');
+            checkText.classList.add('Visible');
+        } else {
+            checkText.classList.add('Invisible');
+            checkText.classList.remove('Visible');
+        }
+        
+    }
+
+    async function checkSolution() {
+        clearInterval(timer);
+        const word = document.getElementById('solution-input').value.toUpperCase();
+        const wordLetterCount = getLetterCount(word);
+        let wordIsValid = true;
+
+        changeLoadingText();
+
+
+        const resultElem = document.getElementById('answerResult') 
+        resultElem.classList.remove('Invisible');
+        resultElem.classList.add('Visible');
+        // Compare the word's letter count with the available letters count in letterCounts
+        for (let letter in wordLetterCount) {
+            if (!letterCounts[letter] || wordLetterCount[letter] > letterCounts[letter]) {
+                //alert("Invalid word. Try again!")
+                resultElem.textContent = "Invalid Word. Try again!";
+                wordIsValid = false;
+                changeLoadingText();
+                break;
+            }
+        }
+        
+        if (wordIsValid) {
+            const addCheck = await checkValidWord(word);
+            if (addCheck) {
+                //alert("Valid word!")
+                resultElem.textContent = "Valid Word!";
+                changeLoadingText();
+            } else {
+                //alert("Not a real word")
+                resultElem.textContent = "Not a real word!";
+                changeLoadingText();
+            }
+        }
+        document.getElementById('playAgainBtn').classList.remove('Invisible');
+        document.getElementById('playAgainBtn').classList.add('Visible');
+
+    }
+</script>
+</body>
+</html>
