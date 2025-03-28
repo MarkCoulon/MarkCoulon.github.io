@@ -17,6 +17,7 @@
             <div class="box"></div>
             <div class="box"></div>
             <div class="box"></div>
+            <div class="box"></div>
         </div>
         <div class="buttons">
             <button onclick="selectNumber('small')">Small</button>
@@ -48,7 +49,7 @@
         let targetNumber = 0;
 
         function selectNumber(type) {
-            if (index >= 5) return;
+            if (index >= 6) return;
             
             let number = type === 'small' 
                 ? smallNumbers[Math.floor(Math.random() * smallNumbers.length)] 
@@ -58,7 +59,7 @@
             selectedNumbers.push(number);
             index++;
             
-            if (index === 5) {
+            if (index === 6) {
                 generateTargetNumber();
                 startCountdown();
             }
