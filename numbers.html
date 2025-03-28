@@ -78,6 +78,7 @@
                 if (timeLeft <= 0) {
                     clearInterval(timer);
                     document.getElementById('timer').textContent = "Time's Up!"
+                    checkSolution()
                     // alert('Time is up!');
                 }
             }, 1000);
